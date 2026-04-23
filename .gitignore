@@ -1,0 +1,37 @@
+# Secrets
+.env
+.env.local
+secrets.h
+credentials.h
+config.local.*
+*.key
+*.pem
+
+# Output (generated report)
+kod_haritasi.html
+*.html.out
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Claude Code
+.claude/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+dist/
+*.egg-info/

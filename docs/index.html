@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kod Haritası — Disk Tarayıcı</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #080c10; color: #c9d1d9; font-family: "Cascadia Code", "Consolas", monospace; overflow-x: hidden; }
+
+  /* Nav */
+  nav { display: flex; align-items: center; justify-content: space-between; padding: 18px 40px; border-bottom: 1px solid #1a2030; background: #080c10; position: sticky; top: 0; z-index: 99; }
+  .nav-logo { font-size: 18px; font-weight: 700; color: #6C63FF; letter-spacing: 2px; }
+  .nav-link { color: #8b949e; text-decoration: none; font-size: 13px; padding: 6px 14px; border: 1px solid #21262d; border-radius: 6px; transition: all .15s; }
+  .nav-link:hover { border-color: #6C63FF; color: #6C63FF; }
+
+  /* Hero */
+  .hero { min-height: 88vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 60px 20px; position: relative; }
+  .hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 60% 40% at 50% 30%, #6C63FF18 0%, transparent 70%); pointer-events: none; }
+  .tag { font-size: 11px; letter-spacing: 3px; color: #6C63FF; text-transform: uppercase; margin-bottom: 24px; }
+  .hero h1 { font-size: clamp(36px, 7vw, 72px); font-weight: 800; color: #e6edf3; line-height: 1.1; margin-bottom: 20px; }
+  .hero h1 span { color: #6C63FF; }
+  .hero p { max-width: 560px; color: #8b949e; font-size: 15px; line-height: 1.8; margin-bottom: 40px; font-family: "Segoe UI", sans-serif; }
+  .hero-buttons { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
+  .btn { padding: 12px 28px; border-radius: 8px; font-size: 14px; font-weight: 600; text-decoration: none; transition: all .15s; cursor: pointer; }
+  .btn-primary { background: #6C63FF; color: #fff; border: none; }
+  .btn-primary:hover { background: #5A52E0; transform: translateY(-1px); }
+  .btn-outline { background: transparent; color: #c9d1d9; border: 1px solid #30363d; }
+  .btn-outline:hover { border-color: #6C63FF; color: #6C63FF; }
+
+  /* Terminal block */
+  .terminal { background: #0d1117; border: 1px solid #21262d; border-radius: 10px; padding: 20px 24px; margin-top: 48px; max-width: 580px; width: 100%; text-align: left; }
+  .term-bar { display: flex; gap: 6px; margin-bottom: 14px; }
+  .term-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .term-line { font-size: 13px; color: #8b949e; line-height: 2; }
+  .term-line .prompt { color: #6C63FF; }
+  .term-line .cmd { color: #e6edf3; }
+  .term-line .out { color: #3fb950; }
+  .term-line .dim { color: #444; }
+
+  /* Features */
+  .section { padding: 80px 40px; max-width: 1100px; margin: 0 auto; }
+  .section-label { font-size: 11px; letter-spacing: 3px; color: #6C63FF; text-transform: uppercase; margin-bottom: 12px; }
+  .section-title { font-size: clamp(22px, 4vw, 36px); font-weight: 700; color: #e6edf3; margin-bottom: 48px; font-family: "Segoe UI", sans-serif; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+  .card { background: #0d1117; border: 1px solid #21262d; border-radius: 10px; padding: 28px; transition: border-color .15s; }
+  .card:hover { border-color: #6C63FF44; }
+  .card-icon { font-size: 28px; margin-bottom: 14px; }
+  .card h3 { font-size: 15px; color: #e6edf3; margin-bottom: 8px; }
+  .card p { font-size: 13px; color: #8b949e; line-height: 1.7; font-family: "Segoe UI", sans-serif; }
+
+  /* Lang table */
+  .lang-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+  .lang-chip { display: flex; align-items: center; gap: 8px; padding: 7px 14px; background: #0d1117; border: 1px solid #21262d; border-radius: 6px; font-size: 12px; color: #8b949e; }
+  .lang-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  /* Steps */
+  .steps { display: flex; flex-direction: column; gap: 24px; }
+  .step { display: flex; gap: 20px; align-items: flex-start; }
+  .step-num { min-width: 36px; height: 36px; background: #6C63FF22; border: 1px solid #6C63FF44; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #6C63FF; font-size: 14px; font-weight: 700; }
+  .step-body h4 { color: #e6edf3; font-size: 14px; margin-bottom: 4px; }
+  .step-body p { color: #8b949e; font-size: 13px; line-height: 1.6; font-family: "Segoe UI", sans-serif; }
+
+  /* Divider */
+  .divider { border: none; border-top: 1px solid #1a2030; margin: 0; }
+
+  /* Footer */
+  footer { text-align: center; padding: 40px 20px; color: #444; font-size: 12px; }
+  footer a { color: #6C63FF; text-decoration: none; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">⬡ KOD HARİTASI</div>
+  <a class="nav-link" href="https://github.com/Eren-Oztk/Kod_Tarama" target="_blank">GitHub →</a>
+</nav>
+
+<section class="hero">
+  <div class="tag">Python · Disk Tarayıcı · HTML Rapor</div>
+  <h1>Tüm kodların<br><span>tek haritada.</span></h1>
+  <p>Bilgisayarındaki tüm disk sürücülerini tarar, kod dosyalarını proje klasörlerine göre gruplar ve interaktif bir HTML raporu masaüstüne bırakır.</p>
+  <div class="hero-buttons">
+    <a class="btn btn-primary" href="https://github.com/Eren-Oztk/Kod_Tarama" target="_blank">GitHub'dan İndir</a>
+    <a class="btn btn-outline" href="https://github.com/Eren-Oztk/Kod_Tarama#readme" target="_blank">Dökümantasyon</a>
+  </div>
+
+  <div class="terminal">
+    <div class="term-bar">
+      <div class="term-dot" style="background:#FF5F57"></div>
+      <div class="term-dot" style="background:#FEBC2E"></div>
+      <div class="term-dot" style="background:#28C840"></div>
+    </div>
+    <div class="term-line"><span class="prompt">$ </span><span class="cmd">git clone https://github.com/Eren-Oztk/Kod_Tarama</span></div>
+    <div class="term-line"><span class="prompt">$ </span><span class="cmd">python kod_tara.py</span></div>
+    <div class="term-line dim">───────────────────────────────────────</div>
+    <div class="term-line"><span class="out">Taranıyor: C:\, D:\</span></div>
+    <div class="term-line"><span class="out">  1500 klasör tarandı...</span></div>
+    <div class="term-line"><span class="out">Tamamlandı: 3842 kod dosyası, 47 proje bulundu.</span></div>
+    <div class="term-line"><span class="out">✓ Rapor oluşturuldu: C:\Users\...\Desktop\kod_haritasi.html</span></div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<div class="section">
+  <div class="section-label">Özellikler</div>
+  <div class="section-title">Neler yapabilir?</div>
+  <div class="grid">
+    <div class="card">
+      <div class="card-icon">💽</div>
+      <h3>Çoklu Disk Tarama</h3>
+      <p>Windows'taki tüm aktif sürücüleri (C:\, D:\, E:\…) otomatik olarak algılar ve paralel şekilde tarar.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">📂</div>
+      <h3>Proje Gruplandırma</h3>
+      <p><code>requirements.txt</code>, <code>package.json</code>, <code>.git</code> gibi işaretçileri kullanarak dosyaları proje klasörlerine atar.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🔍</div>
+      <h3>Arama & Filtre</h3>
+      <p>Raporda proje adı, dosya adı veya dile göre anlık arama ve filtreleme yapılabilir.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">👁</div>
+      <h3>Kod Önizleme</h3>
+      <p>Dosyaya tıklandığında ilk 6 satır rapor içinde görüntülenir — editör açmaya gerek yok.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">📊</div>
+      <h3>Dil İstatistikleri</h3>
+      <p>Her projedeki dil dağılımı renk kodlu rozetlerle gösterilir; genel istatistik üst barda özetlenir.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">📄</div>
+      <h3>Bağımsız HTML</h3>
+      <p>Çıktı tek bir HTML dosyasıdır; sunucu gerektirmez, tarayıcıda çevrimdışı açılır.</p>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<div class="section">
+  <div class="section-label">Desteklenen Diller</div>
+  <div class="section-title">30+ dil ve teknoloji</div>
+  <div class="lang-grid">
+    <div class="lang-chip"><div class="lang-dot" style="background:#3572A5"></div>Python</div>
+    <div class="lang-chip"><div class="lang-dot" style="background:#F1E05A"></div>JavaScript</div>
+    <div class="lang-chip"><div class="lang-dot" style="background:#2B7489"></div>TypeScript</div>
+    <div class="lang-chip"><div class="lang-dot" style="background:#E34C26"></div>HTML</div>
+    <div class="lang-chip"><div class="lang-dot" style="background:#563D7C"></div>CSS / SCSS</div>
+    <div class="lang-chip"><div class="lang-dot" style="background:#61DAFB"></div>React</div>
+    <div class="lang-chip"><div class="lang-dot" style="background:#00979D"></div>Arduino</div>
+    <div class="lang-chip"><div class="lang-dot" style="background:#F34B7D"></div>C++</div>
+    <div class="lang-chip"><div class="lang-dot" style="background:#555555"></div>C / C Header</div>
+    <div class="lang-chip"><div class="lang-dot" style="background:#DEA584"></div>Rust</div>
+    <div class="lang-chip"><div class="lang-dot" style="background:#00ADD8"></div>Go</div>
+    <div class="lang-chip"><div class="lang-dot" style="background:#B07219"></div>Java</div>
+    <div class="lang-chip"><div class="lang-dot" style="background:#F18E33"></div>Kotlin</div>
+    <div class="lang-chip"><div class="lang-dot" style="background:#701516"></div>Ruby</div>
+    <div class="lang-chip"><div class="lang-dot" style="background:#4F5D95"></div>PHP</div>
+    <div class="lang-chip"><div class="lang-dot" style="background:#89E051"></div>Shell</div>
+    <div class="lang-chip"><div class="lang-dot" style="background:#888888"></div>JSON / YAML / TOML</div>
+    <div class="lang-chip"><div class="lang-dot" style="background:#E38C00"></div>SQL</div>
+    <div class="lang-chip"><div class="lang-dot" style="background:#00B4AB"></div>Dart</div>
+    <div class="lang-chip"><div class="lang-dot" style="background:#FFAC45"></div>Swift</div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<div class="section">
+  <div class="section-label">Kurulum</div>
+  <div class="section-title">Nasıl başlarım?</div>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h4>Repoyu klonla</h4>
+        <p><code>git clone https://github.com/Eren-Oztk/Kod_Tarama.git</code> komutuyla indir. Python 3.8+ gereklidir; dış bağımlılık yoktur.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h4>Çalıştır</h4>
+        <p><code>python kod_tara.py</code> — veya Windows'ta <code>TARA.bat</code> dosyasına çift tıkla. Tarama 1-5 dakika sürebilir.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h4>Raporu aç</h4>
+        <p>Tarama bittiğinde masaüstünde <code>kod_haritasi.html</code> otomatik açılır. Tarayıcıda çevrimdışı çalışır.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Built by <a href="https://github.com/Eren-Oztk" target="_blank">Eren-Oztk</a>
+  &nbsp;·&nbsp;
+  <a href="https://github.com/Eren-Oztk/Kod_Tarama" target="_blank">GitHub</a>
+  &nbsp;·&nbsp; MIT Lisansı
+</footer>
+
+</body>
+</html>
