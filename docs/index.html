@@ -6,7 +6,30 @@
 <title>Kod Haritası — Disk Tarayıcı</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: #080c10; color: #c9d1d9; font-family: "Cascadia Code", "Consolas", monospace; overflow-x: hidden; }
+  body { background: #080c10; color: #c9d1d9; font-family: "Cascadia Code", "Consolas", monospace; overflow-x: hidden; position: relative; }
+
+  /* ── YENİ: Donanım Monitörü ── */
+  .hw-monitor {
+    position: fixed;
+    top: 80px; 
+    right: 20px;
+    background: rgba(13, 17, 23, 0.85);
+    border: 1px solid #21262d;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 12px;
+    color: #8b949e;
+    text-align: right;
+    backdrop-filter: blur(8px);
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  }
+  .hw-row { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 4px; }
+  .hw-row:last-child { margin-bottom: 0; }
+  .hw-val { font-weight: bold; color: #61DAFB; transition: color 0.3s; }
+  .c-green { color: #3fb950 !important; }
+  .c-yellow { color: #FEBC2E !important; }
+  .c-red { color: #FF5F57 !important; }
 
   /* Nav */
   nav { display: flex; align-items: center; justify-content: space-between; padding: 18px 40px; border-bottom: 1px solid #1a2030; background: #080c10; position: sticky; top: 0; z-index: 99; }
@@ -26,17 +49,22 @@
   .btn-primary { background: #6C63FF; color: #fff; border: none; }
   .btn-primary:hover { background: #5A52E0; transform: translateY(-1px); }
   .btn-outline { background: transparent; color: #c9d1d9; border: 1px solid #30363d; }
-  .btn-outline:hover { border-color: #6C63FF; color: #6C63FF; }
+  .btn-outline:hover:not(:disabled) { border-color: #6C63FF; color: #6C63FF; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
   /* Terminal block */
-  .terminal { background: #0d1117; border: 1px solid #21262d; border-radius: 10px; padding: 20px 24px; margin-top: 48px; max-width: 580px; width: 100%; text-align: left; }
-  .term-bar { display: flex; gap: 6px; margin-bottom: 14px; }
+  .terminal { background: #0d1117; border: 1px solid #21262d; border-radius: 10px; padding: 20px 24px; margin-top: 48px; max-width: 650px; width: 100%; text-align: left; height: 260px; overflow-y: auto; display: flex; flex-direction: column; }
+  .term-bar { display: flex; gap: 6px; margin-bottom: 14px; flex-shrink: 0; }
   .term-dot { width: 10px; height: 10px; border-radius: 50%; }
-  .term-line { font-size: 13px; color: #8b949e; line-height: 2; }
-  .term-line .prompt { color: #6C63FF; }
+  .term-body { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+  .term-line { font-size: 13px; color: #8b949e; line-height: 1.6; font-family: "Cascadia Code", "Consolas", monospace; animation: fadeIn 0.2s ease-in; }
+  .term-line .prompt { color: #6C63FF; font-weight: bold; }
   .term-line .cmd { color: #e6edf3; }
   .term-line .out { color: #3fb950; }
   .term-line .dim { color: #444; }
+  .term-line .warn { color: #FEBC2E; }
+  
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
   /* Features */
   .section { padding: 80px 40px; max-width: 1100px; margin: 0 auto; }
@@ -67,9 +95,32 @@
   /* Footer */
   footer { text-align: center; padding: 40px 20px; color: #444; font-size: 12px; }
   footer a { color: #6C63FF; text-decoration: none; }
+
+  @media (max-width: 768px) {
+    .hw-monitor { top: auto; bottom: 20px; right: 20px; transform: scale(0.85); transform-origin: bottom right; }
+  }
 </style>
 </head>
 <body>
+
+<div class="hw-monitor" id="hwMonitor">
+  <div class="hw-row">
+    <span>SYSTEM</span>
+    <span style="color: #e6edf3;">OS.Walk() Engine</span>
+  </div>
+  <div class="hw-row">
+    <span>CPU USAGE</span>
+    <span><span id="cpuVal" class="hw-val c-green">3</span> <span style="font-size: 10px;">%</span></span>
+  </div>
+  <div class="hw-row">
+    <span>DISK READ</span>
+    <span><span id="diskVal" class="hw-val c-green">0.0</span> <span style="font-size: 10px;">MB/s</span></span>
+  </div>
+  <div class="hw-row">
+    <span>FILES SCANNED</span>
+    <span><span id="fileVal" class="hw-val" style="color:#e6edf3">0</span></span>
+  </div>
+</div>
 
 <nav>
   <div class="nav-logo">⬡ KOD HARİTASI</div>
@@ -80,9 +131,10 @@
   <div class="tag">Python · Disk Tarayıcı · HTML Rapor</div>
   <h1>Tüm kodların<br><span>tek haritada.</span></h1>
   <p>Bilgisayarındaki tüm disk sürücülerini tarar, kod dosyalarını proje klasörlerine göre gruplar ve interaktif bir HTML raporu masaüstüne bırakır.</p>
+  
   <div class="hero-buttons">
     <a class="btn btn-primary" href="https://github.com/Eren-Oztk/Kod_Tarama" target="_blank">GitHub'dan İndir</a>
-    <a class="btn btn-outline" href="https://github.com/Eren-Oztk/Kod_Tarama#readme" target="_blank">Dökümantasyon</a>
+    <button class="btn btn-outline" id="simBtn" onclick="runSimulation()">▶ Canlı Simülasyon</button>
   </div>
 
   <div class="terminal">
@@ -91,13 +143,12 @@
       <div class="term-dot" style="background:#FEBC2E"></div>
       <div class="term-dot" style="background:#28C840"></div>
     </div>
-    <div class="term-line"><span class="prompt">$ </span><span class="cmd">git clone https://github.com/Eren-Oztk/Kod_Tarama</span></div>
-    <div class="term-line"><span class="prompt">$ </span><span class="cmd">python kod_tara.py</span></div>
-    <div class="term-line dim">───────────────────────────────────────</div>
-    <div class="term-line"><span class="out">Taranıyor: C:\, D:\</span></div>
-    <div class="term-line"><span class="out">  1500 klasör tarandı...</span></div>
-    <div class="term-line"><span class="out">Tamamlandı: 3842 kod dosyası, 47 proje bulundu.</span></div>
-    <div class="term-line"><span class="out">✓ Rapor oluşturuldu: C:\Users\...\Desktop\kod_haritasi.html</span></div>
+    <div class="term-body" id="termBody">
+      <div class="term-line"><span class="prompt">$ </span><span class="cmd">git clone https://github.com/Eren-Oztk/Kod_Tarama</span></div>
+      <div class="term-line"><span class="prompt">$ </span><span class="cmd">python kod_tara.py</span></div>
+      <div class="term-line dim">───────────────────────────────────────</div>
+      <div class="term-line"><span class="out">Sistem hazır. Simülasyonu başlatmak için butona tıklayın...</span></div>
+    </div>
   </div>
 </section>
 
@@ -205,6 +256,112 @@
   <a href="https://github.com/Eren-Oztk/Kod_Tarama" target="_blank">GitHub</a>
   &nbsp;·&nbsp; MIT Lisansı
 </footer>
+
+<script>
+  // Monitör Değişkenleri
+  const cpuEl = document.getElementById('cpuVal');
+  const diskEl = document.getElementById('diskVal');
+  const fileEl = document.getElementById('fileVal');
+  
+  let currentCpu = 2, targetCpu = 2;
+  let currentDisk = 0.0, targetDisk = 0.0;
+  let filesScanned = 0;
+  let isScanning = false;
+
+  // Gerçekçi Monitör Dalgalanması
+  setInterval(() => {
+    currentCpu += (targetCpu - currentCpu) * 0.2 + (Math.random() * 4 - 2);
+    currentDisk += (targetDisk - currentDisk) * 0.3 + (Math.random() * 20 - 10);
+
+    if(currentCpu < 1) currentCpu = 1 + Math.random();
+    if(currentDisk < 0) currentDisk = 0;
+
+    cpuEl.innerText = Math.round(currentCpu);
+    diskEl.innerText = currentDisk.toFixed(1);
+    fileEl.innerText = filesScanned.toLocaleString('tr-TR');
+
+    // Renklendirme
+    cpuEl.className = `hw-val ${currentCpu > 60 ? 'c-red' : (currentCpu > 30 ? 'c-yellow' : 'c-green')}`;
+    diskEl.className = `hw-val ${currentDisk > 400 ? 'c-red' : (currentDisk > 100 ? 'c-yellow' : 'c-green')}`;
+  }, 300);
+
+  // Terminal Log Sistemi
+  const termBody = document.getElementById('termBody');
+  function log(msg, cls="dim") {
+    const div = document.createElement('div');
+    div.className = `term-line`;
+    div.innerHTML = `<span class="${cls}">${msg}</span>`;
+    termBody.appendChild(div);
+    termBody.scrollTop = termBody.scrollHeight;
+  }
+
+  // Tarama Simülasyonu
+  async function runSimulation() {
+    if (isScanning) return;
+    isScanning = true;
+    const btn = document.getElementById('simBtn');
+    btn.disabled = true;
+    btn.innerText = "⏳ Taranıyor...";
+
+    // Terminali Temizle ve Başla
+    termBody.innerHTML = "";
+    log(`<span class="prompt">$ </span><span class="cmd">python kod_tara.py</span>`, "");
+    log("───────────────────────────────────────", "dim");
+    
+    await new Promise(r => setTimeout(r, 800));
+    log("Sürücüler tespit ediliyor...", "dim");
+    await new Promise(r => setTimeout(r, 600));
+    log("[+] C:\\ (Windows) algılandı.", "out");
+    log("[+] D:\\ (Data) algılandı.", "out");
+    
+    await new Promise(r => setTimeout(r, 1000));
+    log("Çoklu iş parçacığı (Multi-threading) başlatılıyor...", "warn");
+
+    // Yük Başlıyor! (Donanımı fırlat)
+    targetCpu = 75; 
+    targetDisk = 850; 
+    
+    // Hızlı akan loglar ve sayaç artışı
+    const fastLogs = [
+      "D:\\Projeler\\nmap-scanner taranıyor...",
+      "D:\\Projeler\\yerli-dali-ui\\src taranıyor...",
+      "[!] node_modules atlandı.",
+      "C:\\Users\\Eren\\Documents\\Scripts taranıyor...",
+      "[!] .venv atlandı.",
+      "D:\\Projeler\\trading-brain\\models taranıyor...",
+      "C:\\Dev\\Arduino_Projects taranıyor..."
+    ];
+
+    let logCounter = 0;
+    const scanInterval = setInterval(() => {
+      filesScanned += Math.floor(Math.random() * 120) + 50; // Saniyede yüzlerce dosya
+      
+      if(Math.random() > 0.6) {
+        log(fastLogs[logCounter % fastLogs.length], "dim");
+        logCounter++;
+      }
+    }, 150);
+
+    // 6 Saniye sonra taramayı bitir
+    await new Promise(r => setTimeout(r, 6000));
+    clearInterval(scanInterval);
+    
+    // Yükü Düşür
+    targetCpu = 3; 
+    targetDisk = 0;
+
+    log("───────────────────────────────────────", "dim");
+    log(`✓ Tarama tamamlandı.`, "out");
+    log(`İncelenen Dosya: ${filesScanned.toLocaleString('tr-TR')}`, "cmd");
+    log(`Bulunan Kod Dosyası: 4,892`, "cmd");
+    log(`Bulunan Proje: 64`, "cmd");
+    log(`HTML Raporu oluşturuldu: C:\\Users\\Desktop\\kod_haritasi.html`, "out");
+
+    btn.innerText = "▶ Tekrar Başlat";
+    btn.disabled = false;
+    isScanning = false;
+  }
+</script>
 
 </body>
 </html>
